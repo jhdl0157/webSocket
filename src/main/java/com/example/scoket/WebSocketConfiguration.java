@@ -3,11 +3,13 @@ package com.example.scoket;
 import com.example.scoket.handler.ClientHandler;
 import com.example.scoket.handler.DeviceHandler;
 import com.example.scoket.util.PathVariable;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -24,14 +26,16 @@ import java.util.Map;
 public class WebSocketConfiguration implements WebSocketConfigurer {
     private final ClientHandler clientHandler;
     private final DeviceHandler deviceHandler;
+    //들어올주소 client/{deviceId}/{deviceType}/{?OperationId}?token=~~~
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(clientHandler,"client/**")
+        registry.addHandler(clientHandler,"/client/**")
                 .setAllowedOrigins("*")
-                        .addInterceptors(new ClientSocketInterceptor());
+                .addInterceptors(new ClientSocketInterceptor());
 
         registry.addHandler(deviceHandler,"/device/**")
-                .setAllowedOrigins("*").addInterceptors(new DeviceSocketInterceptor());
+                .setAllowedOrigins("*")
+                .addInterceptors(new DeviceSocketInterceptor());
 
     }
 
@@ -39,6 +43,11 @@ public class WebSocketConfiguration implements WebSocketConfigurer {
 
         @Override
         public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
+            if (request instanceof ServletServerHttpRequest) {
+                ServletServerHttpRequest servletServerRequest = (ServletServerHttpRequest) request;
+                HttpServletRequest servletRequest = servletServerRequest.getServletRequest();
+                log.info(servletRequest.toString());
+            }
             return true;
         }
 
